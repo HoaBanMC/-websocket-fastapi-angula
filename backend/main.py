@@ -44,16 +44,22 @@ class ConnectionManager:
     async def broadcast(self, message: str, room_id: int):
         if room_id in self.active_connections:
             for connection in self.active_connections[room_id]:
-                await connection.send_text(message)
+                try:
+                    await connection.send_text(message)
+                except Exception as e:
+                    print(f"Failed to send message: {e}")
+                    self.disconnect(connection, room_id)
 
 manager = ConnectionManager()
 
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: int, session: Session = Depends(get_session)):
     await manager.connect(websocket, room_id)
+    print(f"Connected to room {room_id}")
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"Received message: {data}")
             # Save the message to the database
             message = Message(content=data, room_id=room_id, user_id=1)  # Assume user_id=1 for simplicity
             session.add(message)
@@ -62,7 +68,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, session: Sessio
             # Broadcast the message to all clients in the room
             await manager.broadcast(f"{message.user_id}: {message.content}", room_id)
     except WebSocketDisconnect:
+        print(f"WebSocket disconnected from room {room_id}")
         manager.disconnect(websocket, room_id)
+    except Exception as e:
+        print(f"Error in websocket_endpoint: {e}")
+        
 
 @app.get("/chatrooms", response_model=List[ChatRoom])
 def read_chatrooms(session: Session = Depends(get_session)):
