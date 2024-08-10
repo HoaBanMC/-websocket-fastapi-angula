@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import List, Optional
 import datetime
-from datetime import datetime
+from datetime import datetime, timezone
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -19,7 +19,7 @@ class ChatRoom(SQLModel, table=True):
 class Message(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     content: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    time: int
     user_id: int = Field(foreign_key="user.id")
     room_id: int = Field(foreign_key="chatroom.id")
 
