@@ -4,6 +4,7 @@ from backend.utils.database import create_db_and_tables
 from backend.utils.middleware import setup_cors
 from backend.routes import chatrooms, websocket
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Example: use `app` to access configuration or perform setup
@@ -11,11 +12,12 @@ async def lifespan(app: FastAPI):
     create_db_and_tables()
     yield
 
+
 app = FastAPI(
     title="My Chatroom",
     description="This is a description of my chatroom API.",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Gọi hàm setup_cors để cấu hình CORS

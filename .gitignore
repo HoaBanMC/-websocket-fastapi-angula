@@ -4,11 +4,8 @@
 **/*.pyc
 **/__pycache__/
 
-<<<<<<< HEAD
-=======
 # Compiled output
 frontend/dist
->>>>>>> c2d4ddbcc9f3aacf549260d047704a8323dc713f
 
 # Node
 node_modules/
