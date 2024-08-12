@@ -1,0 +1,14 @@
+{
+  "overrides": [
+    {
+      "files": "*.html",
+      "options": {
+        "parser": "angular"
+      }
+    }
+  ],
+  "printWidth": 180,
+  "bracketSpacing": true,
+  "tabWidth": 4,
+  "useTabs": true
+}
