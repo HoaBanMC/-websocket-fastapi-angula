@@ -1,6 +1,8 @@
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
+import logging
+import uuid
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, status
 from sqlmodel import Session, select, delete
 from typing import List, Dict
@@ -32,27 +34,39 @@ setup_cors(app)
 # Manage active connections
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[int, List[WebSocket]] = {}
+        self.active_connections: Dict[int, Dict[int, WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket, room_id: int):
+    async def connect(self, websocket: WebSocket, room_id: int, user_id: int):
         await websocket.accept()
         if room_id not in self.active_connections:
-            self.active_connections[room_id] = []
-        self.active_connections[room_id].append(websocket)
+            self.active_connections[room_id] = {}
+        self.active_connections[room_id][user_id] = websocket
 
-    def disconnect(self, websocket: WebSocket, room_id: int):
-        self.active_connections[room_id].remove(websocket)
-
-    async def broadcast(self, response: str, room_id: int):
+    def disconnect(self, room_id: int, user_id: int):
         if room_id in self.active_connections:
-            for connection in self.active_connections[room_id]:
+            self.active_connections[room_id].pop(user_id, None)
+            if not self.active_connections[room_id]:  # Remove the room if empty
+                self.active_connections.pop(room_id)
+
+    async def broadcast(self, response: dict, room_id: int):
+        if room_id in self.active_connections:
+            for websocket in self.active_connections[room_id].values():
                 try:
-                    await connection.send_json(response)
+                    await websocket.send_json(response)
                 except Exception as e:
                     print(f"Failed to send message: {e}")
-                    self.disconnect(connection, room_id)
+                    # Handle disconnection during send
+                    user_id = next(key for key, value in self.active_connections[room_id].items() if value == websocket)
+                    self.disconnect(room_id, user_id)
+
 
 manager = ConnectionManager()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("FastAPI app")
+
+connected_clients = []
+connected_rooms = {}  # Dictionary to manage connections per room
 
 async def heavy_data_processing(data: dict):
     """Some (fake) heavy data processing logic."""
@@ -62,8 +76,10 @@ async def heavy_data_processing(data: dict):
 
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: int, session: Session = Depends(get_session)):
-    await manager.connect(websocket, room_id)
-    print(f"Connected to room {room_id}")
+    user_id = str(uuid.uuid4())
+    await manager.connect(websocket, room_id, user_id)
+    logger.info(f"New connection: {websocket.client}, ID: {user_id}")
+
     try:
         while True:
             data = await websocket.receive_json()
@@ -71,11 +87,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, session: Sessio
             response = {
                 "content": message_processed,
                 "time": round(datetime.now().timestamp()),
-                "id": 1
+                "room_id": room_id,
+                "user_id": user_id
             }
 
             # Save the message to the database
-            message = Message(content=response["content"], time=response["time"], room_id=room_id, user_id=1)  # Assume user_id=1 for simplicity
+            message = Message(content=response["content"], time=response["time"], room_id=room_id, user_id=user_id)
             session.add(message)
             session.commit()
             session.refresh(message)
@@ -84,10 +101,12 @@ async def websocket_endpoint(websocket: WebSocket, room_id: int, session: Sessio
             await manager.broadcast(response, room_id)
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, room_id)
+        manager.disconnect(room_id, user_id)
+        print(f"User {user_id} disconnected from room {room_id}")
         
     except Exception as e:
         print(f"Error in websocket_endpoint: {e}")
+
 
 @app.get("/chatrooms", response_model=List[ChatRoom])
 def read_chatrooms(session: Session = Depends(get_session)):

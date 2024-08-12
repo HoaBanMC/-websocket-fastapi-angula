@@ -14,16 +14,20 @@ RUN npm install
 # Sao chép mã nguồn của bạn vào container
 COPY . .
 
-# Build ứng dụng Angular
-RUN npm run build --prod --output-hashing=all
+EXPOSE 4200
 
-# Tạo một image mới với Nginx để phục vụ ứng dụng
-FROM nginx:alpine
+CMD ["npm", "start"]
 
-# Sao chép build từ bước trước vào thư mục Nginx
-COPY --from=build /app/dist/* /usr/share/nginx/html
+# # Build ứng dụng Angular
+# RUN npm run build --prod --output-hashing=all
 
-COPY ./nginx.conf /etc/nginx/nginx.conf
+# # Tạo một image mới với Nginx để phục vụ ứng dụng
+# FROM nginx:alpine
 
-# Expose port 80
-EXPOSE 80
+# # Sao chép build từ bước trước vào thư mục Nginx
+# COPY --from=build /app/dist/* /usr/share/nginx/html
+
+# COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# # Expose port 80
+# EXPOSE 80

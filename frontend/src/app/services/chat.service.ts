@@ -10,6 +10,7 @@ import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 export class ChatService {
 	private socket$!: WebSocketSubject<any>;
 	roomId = signal<number>(0);
+	userId = signal<string>('unknow');
 	public receivedData: MessageData[] = [];
 
 	constructor(private http: HttpClient) {}
@@ -47,5 +48,6 @@ export class ChatService {
 export interface MessageData {
 	content: string;
 	time: string;
-	id: string;
+	id?: string;
+	user_id: string;
 }

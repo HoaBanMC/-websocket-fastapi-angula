@@ -20,7 +20,7 @@ class Message(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     content: str
     time: int
-    user_id: int = Field(foreign_key="user.id")
+    user_id: str = Field(foreign_key="user.id")
     room_id: int = Field(foreign_key="chatroom.id")
 
     user: User = Relationship(back_populates="messages")
