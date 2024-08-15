@@ -1,5 +1,5 @@
 #  openssl rand -hex 32
 # Secret key to encode the JWT
-SECRET_KEY = "your_secret_key_here"
+SECRET_KEY = "91b1e3d15e0bd837d4a897a6d36cf84d2696a052ba952796590dee7e134ab122"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120

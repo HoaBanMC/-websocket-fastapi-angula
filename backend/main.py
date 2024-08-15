@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from backend.utils.database import create_db_and_tables
 from backend.utils.middleware import setup_cors
-from backend.routes import chatrooms, websocket
+from backend.routes import chatrooms, websocket, oauth
 
 
 @asynccontextmanager
@@ -26,3 +26,4 @@ setup_cors(app)
 # Gọi các router
 app.include_router(chatrooms.router)
 app.include_router(websocket.router)
+app.include_router(oauth.router)
