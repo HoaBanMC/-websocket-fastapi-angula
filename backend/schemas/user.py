@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
+# Pydantic model để nhận thông tin đăng ký
 class UserCreate(BaseModel):
     username: str
-    email: str
     password: str
 
 class UserRead(BaseModel):
@@ -12,3 +12,8 @@ class UserRead(BaseModel):
 
 class TokenData(BaseModel):
     username: str
+
+# Model cho request body của /login
+class LoginRequest(BaseModel):
+    username: str
+    password: str
